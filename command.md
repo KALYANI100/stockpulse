@@ -37,7 +37,29 @@ H2 console: `http://localhost:8080/h2-console`
 - User: `sa`
 - Password: blank
 
-The database is local and in-memory. It resets when the backend stops; no PostgreSQL connection or seed data is used.
+The database is local and in-memory. It resets when the backend stops; no PostgreSQL connection is used. Seed data is opt-in and must be run after the backend starts.
+
+## Run Demo Seed Data
+
+With the backend running, open `http://localhost:8080/h2-console` and connect with the JDBC URL, user, and password listed above. In the H2 SQL editor, run the idempotent script from `backend/stockpulse/seed.sql`:
+
+```sql
+RUNSCRIPT FROM 'C:/path/to/AI_Inventory/backend/stockpulse/seed.sql';
+```
+
+Replace the path with the absolute location of this workspace. The script follows Addendum A in the supplied HTML brief, uses the current UUID/JPA schema, and skips SKUs that already exist. It does not clear or replace existing records.
+
+After running it, from the workspace root save the seeded products returned by the API to `seed-output.json`:
+
+```powershell
+$seedSkus = @('SKU-ELEC-001','SKU-ELEC-002','SKU-APP-001','SKU-APP-002','SKU-HOME-001','SKU-HOME-002','SKU-ELEC-003','SKU-APP-003')
+$products = Invoke-RestMethod http://localhost:8080/api/products
+$seeded = @($products | Where-Object { $_.sku -in $seedSkus } | Sort-Object sku)
+if ($seeded.Count -ne 8) { throw "Expected 8 seeded products, found $($seeded.Count)" }
+$seeded | ConvertTo-Json -Depth 5 | Set-Content seed-output.json -Encoding utf8
+```
+
+The JSON file contains only the eight demo SKUs, not other catalog records. The in-memory database and seeded rows are cleared when the backend stops; repeat the script after each restart.
 
 ## Frontend
 

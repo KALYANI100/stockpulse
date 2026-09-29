@@ -30,6 +30,7 @@ import './stockpulse.css'
 
 type Notice = { kind: 'success' | 'error'; text: string } | null
 type WorkspacePage = 'home' | 'overview' | 'inventory' | 'decisions'
+type StreamingPricingState = { productId: string; productName: string; reasoning: string; status: 'streaming' | 'complete' }
 
 const pageDetails: Record<WorkspacePage, { section: string; title: string; description: string }> = {
   home: {
@@ -77,6 +78,7 @@ function StockPulseApp() {
   const [connected, setConnected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice>(null)
+  const [streamingPricing, setStreamingPricing] = useState<StreamingPricingState | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | Category>('ALL')
@@ -123,6 +125,12 @@ function StockPulseApp() {
     return () => window.clearTimeout(timeout)
   }, [notice])
 
+  useEffect(() => {
+    if (streamingPricing?.status !== 'complete') return
+    const timeout = window.setTimeout(() => setStreamingPricing(null), 10000)
+    return () => window.clearTimeout(timeout)
+  }, [streamingPricing?.status, streamingPricing?.productId])
+
   const visibleProducts = useMemo(() => {
     const query = search.trim().toLowerCase()
     return products.filter((product) => {
@@ -155,6 +163,28 @@ function StockPulseApp() {
       await loadDashboard(true)
     } catch (cause) {
       setNotice({ kind: 'error', text: cause instanceof Error ? cause.message : 'Action failed' })
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
+  const requestStreamedPricing = async (product: Product) => {
+    setBusyKey(`price-${product.id}`)
+    setStreamingPricing({ productId: product.id, productName: product.name, reasoning: '', status: 'streaming' })
+    try {
+      await api.streamPricing(product.id, (token) => {
+        setStreamingPricing((current) => current?.productId === product.id
+          ? { ...current, reasoning: current.reasoning + token }
+          : current)
+      })
+      setStreamingPricing((current) => current?.productId === product.id
+        ? { ...current, status: 'complete' }
+        : current)
+      setNotice({ kind: 'success', text: 'Streamed pricing suggestion added to the decision queue' })
+      await loadDashboard(true)
+    } catch (cause) {
+      setStreamingPricing(null)
+      setNotice({ kind: 'error', text: cause instanceof Error ? cause.message : 'Pricing stream failed' })
     } finally {
       setBusyKey(null)
     }
@@ -242,6 +272,16 @@ function StockPulseApp() {
               <span>{error}. Start the Spring Boot backend on port 8080 and retry.</span>
               <button className="icon-button" type="button" aria-label="Retry connection" onClick={() => void loadDashboard()}><RefreshCw size={16} /></button>
             </div>
+          )}
+
+          {streamingPricing && (
+            <section className={`streaming-reasoning ${streamingPricing.status}`} aria-live="polite">
+              <span className="streaming-icon">{streamingPricing.status === 'streaming' ? <LoaderCircle className="spin" size={17} /> : <Sparkles size={17} />}</span>
+              <div className="streaming-copy">
+                <strong>{streamingPricing.status === 'streaming' ? 'AI pricing reasoning' : 'Pricing suggestion ready'} <span>· {streamingPricing.productName}</span></strong>
+                <p>{streamingPricing.reasoning || 'Connecting to the advisor…'}</p>
+              </div>
+            </section>
           )}
 
           {activePage === 'overview' && (
@@ -358,7 +398,7 @@ function StockPulseApp() {
                           () => api.updateProductMetrics(product.id, { demandVelocity: product.demandVelocity, reorderThreshold }),
                           'Reorder threshold updated',
                         )}
-                        onRequestPricing={() => void runAction(`price-${product.id}`, () => api.requestAdvice(product.id, 'PRICING'), 'Pricing advice requested')}
+                        onRequestPricing={() => void requestStreamedPricing(product)}
                         onRequestReorder={() => void runAction(`reorder-${product.id}`, () => api.requestAdvice(product.id, 'REORDER'), 'Reorder advice requested')}
                       />
                     ))}
@@ -481,7 +521,7 @@ function ProductRow({ product, busy, onSell, onRequestPricing, onRequestReorder,
       <td>
         <div className="row-actions">
           <button type="button" className="small-action sale-action" onClick={onSell} disabled={busy || product.stockLevel < 1} title="Record one sale" aria-label={`Record one sale for ${product.name}`}><ShoppingCart size={15} /></button>
-          <button type="button" className="small-action" onClick={onRequestPricing} disabled={busy} title="Request pricing advice" aria-label={`Request pricing advice for ${product.name}`}><CircleDollarSign size={15} /></button>
+          <button type="button" className="small-action" onClick={onRequestPricing} disabled={busy} title="Stream pricing reasoning" aria-label={`Stream pricing reasoning for ${product.name}`}><CircleDollarSign size={15} /></button>
           <button type="button" className="small-action" onClick={onRequestReorder} disabled={busy} title="Request reorder advice" aria-label={`Request reorder advice for ${product.name}`}><PackagePlus size={15} /></button>
         </div>
       </td>

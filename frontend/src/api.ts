@@ -74,6 +74,57 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
+async function streamPricing(productId: string, onReasoning: (token: string) => void): Promise<Suggestion> {
+  const response = await fetch(`${apiBase}/products/${productId}/suggest-pricing/stream`, {
+    method: 'POST',
+    headers: { Accept: 'text/event-stream' },
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { detail?: string; message?: string } | null
+    throw new Error(body?.detail ?? body?.message ?? `Request failed (${response.status})`)
+  }
+  if (!response.body) throw new Error('The browser did not provide a streaming response')
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let suggestion: Suggestion | null = null
+
+  const readEvent = (frame: string) => {
+    let eventName = 'message'
+    const data: string[] = []
+    for (const line of frame.split('\n')) {
+      if (line.startsWith('event:')) eventName = line.slice(6).trim()
+      if (line.startsWith('data:')) data.push(line.slice(5).trimStart())
+    }
+    if (data.length === 0) return
+    const payload = JSON.parse(data.join('\n')) as { token?: string; message?: string } | Suggestion
+    if (eventName === 'reasoning' && 'token' in payload && typeof payload.token === 'string') {
+      onReasoning(payload.token)
+    } else if (eventName === 'suggestion') {
+      suggestion = payload as Suggestion
+    } else if (eventName === 'error' && 'message' in payload) {
+      throw new Error(payload.message ?? 'Pricing stream failed')
+    }
+  }
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (value) buffer += decoder.decode(value, { stream: !done })
+    buffer = buffer.replace(/\r\n/g, '\n')
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary >= 0) {
+      readEvent(buffer.slice(0, boundary))
+      buffer = buffer.slice(boundary + 2)
+      boundary = buffer.indexOf('\n\n')
+    }
+    if (done) break
+  }
+  if (buffer.trim()) readEvent(buffer)
+  if (!suggestion) throw new Error('Pricing stream ended before the suggestion was saved')
+  return suggestion
+}
+
 export const api = {
   listProducts: () => request<Product[]>('/products'),
   listPendingSuggestions: () => request<Suggestion[]>('/suggestions?status=PENDING'),
@@ -102,6 +153,7 @@ export const api = {
     `/products/${productId}/suggest-${type === 'PRICING' ? 'pricing' : 'reorder'}`,
     { method: 'POST' },
   ),
+  streamPricing,
   decideSuggestion: (suggestion: Suggestion, decision: 'ACCEPTED' | 'REJECTED') => request<Suggestion>(
     `/${suggestion.type === 'PRICING' ? 'pricing' : 'reorder'}-suggestions/${suggestion.id}`,
     { method: 'PATCH', body: JSON.stringify({ decision }) },
