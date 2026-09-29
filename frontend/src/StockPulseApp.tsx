@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import {
   Activity,
+  ArrowRight,
   ArrowDownRight,
   ArrowUpRight,
   Boxes,
@@ -9,11 +10,14 @@ import {
   CircleCheck,
   CircleDollarSign,
   Clock3,
+  House,
   LoaderCircle,
   Package,
   PackagePlus,
+  Pencil,
   Plus,
   RefreshCw,
+  Save,
   Search,
   ShoppingCart,
   SlidersHorizontal,
@@ -25,9 +29,14 @@ import NewProductDialog from './NewProductDialog'
 import './stockpulse.css'
 
 type Notice = { kind: 'success' | 'error'; text: string } | null
-type WorkspacePage = 'overview' | 'inventory' | 'decisions'
+type WorkspacePage = 'home' | 'overview' | 'inventory' | 'decisions'
 
 const pageDetails: Record<WorkspacePage, { section: string; title: string; description: string }> = {
+  home: {
+    section: 'HOME',
+    title: 'StockPulse',
+    description: 'Inventory signals in. Human-approved pricing and replenishment decisions out.',
+  },
   overview: {
     section: 'OVERVIEW',
     title: 'Inventory overview',
@@ -59,7 +68,7 @@ const triggerLabels: Record<Suggestion['triggerReason'], string> = {
 }
 
 function StockPulseApp() {
-  const [activePage, setActivePage] = useState<WorkspacePage>('overview')
+  const [activePage, setActivePage] = useState<WorkspacePage>('home')
   const [products, setProducts] = useState<Product[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [strategy, setStrategy] = useState<AdvisorMode>('AUTO')
@@ -181,12 +190,13 @@ function StockPulseApp() {
   return (
     <div className="app-frame">
       <aside className="sidebar">
-        <a className="brand" href="#overview" aria-label="StockPulse overview">
+        <a className="brand" href="#home" aria-label="StockPulse home" onClick={() => navigateTo('home')}>
           <span className="brand-mark"><Activity size={19} strokeWidth={2.5} /></span>
           <span className="brand-name">stockpulse<span>MERCH OPS</span></span>
         </a>
         <div className="sidebar-caption">WORKSPACE</div>
         <nav className="side-nav" aria-label="Main navigation">
+          <a className={`nav-item ${activePage === 'home' ? 'is-active' : ''}`} href="#home" onClick={() => navigateTo('home')}><House size={17} /> Home</a>
           <a className={`nav-item ${activePage === 'overview' ? 'is-active' : ''}`} href="#overview" onClick={() => navigateTo('overview')}><Activity size={17} /> Overview</a>
           <a className={`nav-item ${activePage === 'inventory' ? 'is-active' : ''}`} href="#catalog" onClick={() => navigateTo('inventory')}><Boxes size={17} /> Inventory <span className="nav-count">{products.length}</span></a>
           <a className={`nav-item ${activePage === 'decisions' ? 'is-active' : ''}`} href="#decisions" onClick={() => navigateTo('decisions')}><CircleCheck size={17} /> Decision queue <span className="nav-count">{suggestions.length}</span></a>
@@ -199,7 +209,7 @@ function StockPulseApp() {
         <div className="sidebar-footer">STOCKPULSE · INVENTORY ADVISOR</div>
       </aside>
 
-      <main className="main-area" id="overview">
+      <main className="main-area" id={activePage}>
         <header className="topbar">
           <div className="breadcrumb">MERCHANDISING <span>/</span> {currentPage.section}</div>
           <div className="topbar-meta"><span className="live-pip" /> LOCAL DEVELOPMENT</div>
@@ -213,9 +223,11 @@ function StockPulseApp() {
               <p className="heading-copy">{currentPage.description}</p>
             </div>
             <div className="heading-actions">
-              <button className="button button-quiet" type="button" onClick={() => void loadDashboard()} title="Refresh dashboard">
-                <RefreshCw size={16} /> Refresh
-              </button>
+              {activePage !== 'home' && (
+                <button className="button button-quiet" type="button" onClick={() => void loadDashboard()} title="Refresh dashboard">
+                  <RefreshCw size={16} /> Refresh
+                </button>
+              )}
               {activePage === 'inventory' && (
                 <button className="button button-primary" type="button" onClick={() => setShowCreate(true)}>
                   <Plus size={17} /> Add product
@@ -232,27 +244,62 @@ function StockPulseApp() {
             </div>
           )}
 
-          <section className="metrics" aria-label="Inventory metrics">
-            <Metric label="Catalog items" value={String(products.length)} icon={<Package size={18} />} tone="green" />
-            <Metric label="Below threshold" value={String(lowStockCount)} icon={<CircleAlert size={18} />} tone="rust" />
-            <Metric label="Awaiting review" value={String(suggestions.length)} icon={<Clock3 size={18} />} tone="gold" />
-            <Metric label="Avg. demand / day" value={averageVelocity} icon={<Activity size={18} />} tone="blue" />
-          </section>
+          {activePage === 'overview' && (
+            <section className="metrics" aria-label="Inventory metrics">
+              <Metric label="Catalog items" value={String(products.length)} icon={<Package size={18} />} tone="green" />
+              <Metric label="Below threshold" value={String(lowStockCount)} icon={<CircleAlert size={18} />} tone="rust" />
+              <Metric label="Awaiting review" value={String(suggestions.length)} icon={<Clock3 size={18} />} tone="gold" />
+              <Metric label="Avg. demand / day" value={averageVelocity} icon={<Activity size={18} />} tone="blue" />
+            </section>
+          )}
 
           <section className={`workspace-grid ${activePage}-view`}>
+            {activePage === 'home' && (
+              <>
+                <section className="platform-purpose" aria-label="What StockPulse does">
+                  <div className="purpose-copy">
+                    <div className="eyebrow">AI INVENTORY &amp; DYNAMIC PRICING</div>
+                    <p>StockPulse watches stock and demand changes, prepares pricing and reorder advice, and gives your merchandising team the final say before anything is applied.</p>
+                  </div>
+                  <div className="purpose-control"><CircleCheck size={17} /><span><strong>You stay in control</strong><small>Suggestions never change price or stock without approval.</small></span></div>
+                </section>
+                <section className="workflow-section" aria-labelledby="workflow-title">
+                  <div className="workflow-heading">
+                    <div>
+                      <div className="eyebrow">FROM INVENTORY SIGNAL TO DECISION</div>
+                      <h2 id="workflow-title">How StockPulse works</h2>
+                    </div>
+                    <div className="human-checkpoint"><CircleCheck size={15} /> Human approval before changes</div>
+                  </div>
+                  <div className="workflow-steps">
+                    <WorkflowStep number="01" icon={<Boxes size={18} />} title="Track inventory" description="Add products, update stock, or record a sale. Demand and reorder levels stay editable." tone="green" />
+                    <span className="workflow-arrow" aria-hidden="true"><ArrowRight size={17} /></span>
+                    <WorkflowStep number="02" icon={<Activity size={18} />} title="Detect a signal" description="Stock below its threshold or demand rising above peers triggers a review." tone="rust" />
+                    <span className="workflow-arrow" aria-hidden="true"><ArrowRight size={17} /></span>
+                    <WorkflowStep number="03" icon={<Sparkles size={18} />} title="Get recommendations" description="AI suggests a price and reorder quantity; rule-based advice is the fallback." tone="blue" />
+                    <span className="workflow-arrow" aria-hidden="true"><ArrowRight size={17} /></span>
+                    <WorkflowStep number="04" icon={<CircleCheck size={18} />} title="Review and decide" description="Accept or reject each proposal. Only accepted advice changes price or stock." tone="gold" />
+                  </div>
+                </section>
+                <div className="home-actions" aria-label="Continue to workspace">
+                  <button type="button" className="button button-primary" onClick={() => navigateTo('overview')}>Open overview <ArrowRight size={16} /></button>
+                  <button type="button" className="button button-quiet" onClick={() => navigateTo('inventory')}>Browse inventory</button>
+                </div>
+              </>
+            )}
             {activePage === 'overview' && (
-              <div className="overview-shortcuts" aria-label="Workspace pages">
-                <button type="button" className="overview-shortcut" onClick={() => navigateTo('inventory')}>
-                  <span className="shortcut-icon"><Boxes size={19} /></span>
-                  <span className="shortcut-copy"><strong>Product inventory</strong><small>{products.length} catalog items</small></span>
-                  <span className="shortcut-arrow">→</span>
-                </button>
-                <button type="button" className="overview-shortcut" onClick={() => navigateTo('decisions')}>
-                  <span className="shortcut-icon queue"><CircleCheck size={19} /></span>
-                  <span className="shortcut-copy"><strong>Decision queue</strong><small>{suggestions.length} awaiting review</small></span>
-                  <span className="shortcut-arrow">→</span>
-                </button>
-              </div>
+                <div className="overview-shortcuts" aria-label="Workspace pages">
+                  <button type="button" className="overview-shortcut" onClick={() => navigateTo('inventory')}>
+                    <span className="shortcut-icon"><Boxes size={19} /></span>
+                    <span className="shortcut-copy"><strong>Product inventory</strong><small>{products.length} catalog items</small></span>
+                    <span className="shortcut-arrow"><ArrowRight size={17} /></span>
+                  </button>
+                  <button type="button" className="overview-shortcut" onClick={() => navigateTo('decisions')}>
+                    <span className="shortcut-icon queue"><CircleCheck size={19} /></span>
+                    <span className="shortcut-copy"><strong>Decision queue</strong><small>{suggestions.length} awaiting review</small></span>
+                    <span className="shortcut-arrow"><ArrowRight size={17} /></span>
+                  </button>
+                </div>
             )}
 
             <div className={`catalog-panel ${activePage === 'inventory' ? '' : 'page-hidden'}`} id="catalog">
@@ -296,10 +343,21 @@ function StockPulseApp() {
                     )}
                     {visibleProducts.map((product) => (
                       <ProductRow
-                        key={product.id}
+                        key={`${product.id}-${product.stockLevel}-${product.demandVelocity}-${product.reorderThreshold}`}
                         product={product}
-                        busy={busyKey === `sale-${product.id}` || busyKey === `price-${product.id}` || busyKey === `reorder-${product.id}`}
+                        busy={busyKey === `sale-${product.id}` || busyKey === `stock-${product.id}` || busyKey === `price-${product.id}` || busyKey === `reorder-${product.id}` || busyKey === `metrics-${product.id}`}
                         onSell={() => void runAction(`sale-${product.id}`, () => api.simulateSale(product.id), 'Sale recorded; stock signals are being evaluated')}
+                        onSaveStock={(stockLevel) => void runAction(`stock-${product.id}`, () => api.updateStock(product.id, stockLevel), 'Stock level updated')}
+                        onSaveDemand={(demandVelocity) => void runAction(
+                          `metrics-${product.id}`,
+                          () => api.updateProductMetrics(product.id, { demandVelocity, reorderThreshold: product.reorderThreshold }),
+                          'Demand updated',
+                        )}
+                        onSaveThreshold={(reorderThreshold) => void runAction(
+                          `metrics-${product.id}`,
+                          () => api.updateProductMetrics(product.id, { demandVelocity: product.demandVelocity, reorderThreshold }),
+                          'Reorder threshold updated',
+                        )}
                         onRequestPricing={() => void runAction(`price-${product.id}`, () => api.requestAdvice(product.id, 'PRICING'), 'Pricing advice requested')}
                         onRequestReorder={() => void runAction(`reorder-${product.id}`, () => api.requestAdvice(product.id, 'REORDER'), 'Reorder advice requested')}
                       />
@@ -374,12 +432,31 @@ function Metric({ label, value, icon, tone }: { label: string; value: string; ic
   )
 }
 
-function ProductRow({ product, busy, onSell, onRequestPricing, onRequestReorder }: {
+function WorkflowStep({ number, icon, title, description, tone }: {
+  number: string
+  icon: React.ReactNode
+  title: string
+  description: string
+  tone: string
+}) {
+  return (
+    <article className="workflow-step">
+      <div className="workflow-step-meta"><span className={`workflow-icon ${tone}`}>{icon}</span><span className="workflow-number">{number}</span></div>
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </article>
+  )
+}
+
+function ProductRow({ product, busy, onSell, onRequestPricing, onRequestReorder, onSaveStock, onSaveDemand, onSaveThreshold }: {
   product: Product
   busy: boolean
   onSell: () => void
   onRequestPricing: () => void
   onRequestReorder: () => void
+  onSaveStock: (stockLevel: number) => void
+  onSaveDemand: (demandVelocity: number) => void
+  onSaveThreshold: (reorderThreshold: number) => void
 }) {
   const low = product.stockLevel < product.reorderThreshold
   return (
@@ -390,8 +467,16 @@ function ProductRow({ product, busy, onSell, onRequestPricing, onRequestReorder 
           <div className="product-identity"><strong>{product.name}</strong><span>{product.sku} <i>·</i> {categoryLabels[product.category]}</span></div>
         </div>
       </td>
-      <td><div className="stock-cell"><strong className={low ? 'text-rust' : ''}>{product.stockLevel}</strong><span> / {product.reorderThreshold} min</span><span className={`stock-state ${low ? 'low' : 'healthy'}`}>{low ? 'LOW' : product.status === 'OUT_OF_STOCK' ? 'EMPTY' : 'OK'}</span></div></td>
-      <td><span className="velocity-value">{product.demandVelocity}<small> / day</small></span></td>
+      <td>
+        <div className="stock-cell">
+          <InlineNumberEditor label="In stock" value={product.stockLevel} busy={busy} onSave={onSaveStock} />
+          <span className={`stock-state ${low ? 'low' : 'healthy'}`}>{low ? 'LOW' : product.status === 'OUT_OF_STOCK' ? 'EMPTY' : 'OK'}</span>
+        </div>
+        <InlineNumberEditor label="Reorder at" value={product.reorderThreshold} busy={busy} onSave={onSaveThreshold} />
+      </td>
+      <td>
+        <InlineNumberEditor label="Demand/day" value={product.demandVelocity} busy={busy} onSave={onSaveDemand} />
+      </td>
       <td><span className="price-value">{currency.format(product.currentPrice)}</span></td>
       <td>
         <div className="row-actions">
@@ -401,6 +486,54 @@ function ProductRow({ product, busy, onSell, onRequestPricing, onRequestReorder 
         </div>
       </td>
     </tr>
+  )
+}
+
+function InlineNumberEditor({ label, value, busy, onSave }: {
+  label: string
+  value: number
+  busy: boolean
+  onSave: (value: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+  const valid = /^\d+$/.test(draft)
+  const changed = Number(draft) !== value
+
+  const cancel = () => {
+    setDraft(String(value))
+    setEditing(false)
+  }
+
+  const save = () => {
+    if (valid && changed && !busy) onSave(Number(draft))
+    if (valid && !changed) setEditing(false)
+  }
+
+  if (!editing) {
+    return (
+      <div className="inline-metric">
+        <span>{label}</span>
+        <strong>{value}</strong>
+        <button type="button" className="metric-edit-button" onClick={() => { setDraft(String(value)); setEditing(true) }} disabled={busy} title={`Edit ${label.toLowerCase()}`} aria-label={`Edit ${label.toLowerCase()}`}>
+          <Pencil size={12} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="inline-metric is-editing">
+      <span>{label}</span>
+      <input aria-label={label} type="number" min="0" step="1" inputMode="numeric" value={draft} disabled={busy} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => {
+        if (event.key === 'Enter') save()
+        if (event.key === 'Escape') cancel()
+      }} autoFocus />
+      <button type="button" className="metric-edit-button metric-save-button" onClick={save} disabled={busy || !valid || !changed} title={`Save ${label.toLowerCase()}`} aria-label={`Save ${label.toLowerCase()}`}>
+        {busy ? <LoaderCircle className="spin" size={13} /> : <Save size={13} />}
+      </button>
+      <button type="button" className="metric-edit-button metric-cancel-button" onClick={cancel} disabled={busy} title="Cancel edit" aria-label="Cancel edit"><X size={13} /></button>
+    </div>
   )
 }
 

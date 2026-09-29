@@ -49,6 +49,11 @@ export interface CreateProductInput {
   reorderThreshold: number
 }
 
+export interface ProductMetricsInput {
+  demandVelocity: number
+  reorderThreshold: number
+}
+
 const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -81,6 +86,14 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(product),
   }),
+  updateProductMetrics: (productId: string, metrics: ProductMetricsInput) => request<Product>(
+    `/products/${productId}/metrics`,
+    { method: 'PATCH', body: JSON.stringify(metrics) },
+  ),
+  updateStock: (productId: string, stockLevel: number) => request<Product>(
+    `/products/${productId}/stock`,
+    { method: 'PATCH', body: JSON.stringify({ stockLevel }) },
+  ),
   simulateSale: (productId: string, quantity = 1) => request<Product>(`/products/${productId}/orders`, {
     method: 'POST',
     body: JSON.stringify({ quantity }),

@@ -85,6 +85,23 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductResponse updateMetrics(UUID productId, int demandVelocity, int reorderThreshold) {
+        Product product = requireProduct(productId);
+        product.updateDemandVelocity(demandVelocity);
+        product.updateReorderThreshold(reorderThreshold);
+        refreshStatus(product);
+        saveSnapshot(product);
+
+        if (product.getStockLevel() < product.getReorderThreshold()) {
+            publish(product, TriggerReason.INVENTORY_LOW, null);
+        }
+        if (isDemandSpike(product)) {
+            publish(product, TriggerReason.DEMAND_SPIKE, null);
+        }
+        return ProductResponse.from(product);
+    }
+
+    @Transactional
     public ProductResponse simulateSale(UUID productId, int quantity) {
         Product product = requireProduct(productId);
         product.recordSale(quantity);

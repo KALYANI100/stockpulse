@@ -1,0 +1,9 @@
+# Local credentials and environment files
+/llm.txt
+/.env
+/.env.*
+!/.env.example
+
+# OS files
+.DS_Store
+Thumbs.db

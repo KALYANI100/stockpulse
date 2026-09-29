@@ -93,6 +93,20 @@ public class Product {
         currentPrice = newPrice;
     }
 
+    public void updateDemandVelocity(int newDemandVelocity) {
+        if (newDemandVelocity < 0) {
+            throw new IllegalArgumentException("Demand velocity cannot be negative");
+        }
+        demandVelocity = newDemandVelocity;
+    }
+
+    public void updateReorderThreshold(int newReorderThreshold) {
+        if (newReorderThreshold < 0) {
+            throw new IllegalArgumentException("Reorder threshold cannot be negative");
+        }
+        reorderThreshold = newReorderThreshold;
+    }
+
     public void markReviewPending() {
         if (stockLevel > 0) {
             status = ProductStatus.PRICE_REVIEW_PENDING;

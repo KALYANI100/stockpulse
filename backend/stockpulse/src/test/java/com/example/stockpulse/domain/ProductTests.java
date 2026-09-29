@@ -29,4 +29,17 @@ class ProductTests {
         assertThrows(IllegalArgumentException.class, () -> product.recordSale(2));
         assertEquals(1, product.getStockLevel());
     }
+
+    @Test
+    void demandVelocityAndThresholdCanBeEditedDownward() {
+        Product product = new Product("SKU-3", "Editable item", Category.HOME,
+                new BigDecimal("20.00"), 8, 28);
+        product.updateDemandVelocity(5);
+        product.updateReorderThreshold(3);
+
+        assertEquals(5, product.getDemandVelocity());
+        assertEquals(3, product.getReorderThreshold());
+        assertThrows(IllegalArgumentException.class, () -> product.updateDemandVelocity(-1));
+        assertThrows(IllegalArgumentException.class, () -> product.updateReorderThreshold(-1));
+    }
 }

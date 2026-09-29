@@ -98,6 +98,7 @@ Use JSON DTOs and validate inputs at the API boundary. Keep suggestion generatio
 | `GET` | `/products?status=&category=` | List and filter products |
 | `GET` | `/suggestions?status=PENDING` | Load suggestions for the console |
 | `PATCH` | `/products/{id}/stock` | Update stock and publish an inventory signal |
+| `PATCH` | `/products/{id}/metrics` | Edit nonnegative demand velocity and reorder threshold |
 | `POST` | `/products/{id}/orders` | Simulate a sale, decrement stock, and update demand velocity |
 | `POST` | `/products/{id}/suggest-pricing` | Request a manual pricing suggestion |
 | `POST` | `/products/{id}/suggest-reorder` | Request a manual reorder suggestion |

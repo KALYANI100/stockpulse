@@ -1,6 +1,7 @@
 package com.example.stockpulse.api;
 
 import com.example.stockpulse.api.dto.CreateProductRequest;
+import com.example.stockpulse.api.dto.ProductMetricsRequest;
 import com.example.stockpulse.api.dto.ProductResponse;
 import com.example.stockpulse.api.dto.SimulateSaleRequest;
 import com.example.stockpulse.api.dto.StockUpdateRequest;
@@ -53,6 +54,12 @@ public class ProductController {
     public ProductResponse updateStock(@PathVariable UUID productId,
                                        @Valid @RequestBody StockUpdateRequest request) {
         return productService.updateStock(productId, request.stockLevel());
+    }
+
+    @PatchMapping("/{productId}/metrics")
+    public ProductResponse updateMetrics(@PathVariable UUID productId,
+                                        @Valid @RequestBody ProductMetricsRequest request) {
+        return productService.updateMetrics(productId, request.demandVelocity(), request.reorderThreshold());
     }
 
     @PostMapping("/{productId}/orders")
