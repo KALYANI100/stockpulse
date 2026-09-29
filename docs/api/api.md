@@ -1,648 +1,136 @@
-# StockPulse API Documentation
+# StockPulse API
 
-This document provides detailed information about the StockPulse REST API endpoints.
-
-## Base URL
-
-```
-http://localhost:8080/api
-```
-
-## Authentication
-
-No authentication is required for the API endpoints in the current version.
-
-## Error Handling
-
-The API uses standard HTTP status codes to indicate the success or failure of requests:
-
-- `200 OK` - Success
-- `201 Created` - Resource created successfully
-- `202 Accepted` - Request accepted for processing
-- `400 Bad Request` - Invalid request data
-- `404 Not Found` - Resource not found
-- `500 Internal Server Error` - Server error
-
-## Products
-
-### List Products
-
-Get a list of all products with optional filtering.
-
-```
-GET /products
-```
-
-#### Query Parameters
-
-| Parameter | Type     | Required | Description                    |
-|-----------|----------|----------|--------------------------------|
-| category  | Category | No       | Filter by product category     |
-| status    | ProductStatus | No  | Filter by product status       |
-
-#### Response
-
-```json
-[
-  {
-    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "sku": "string",
-    "name": "string",
-    "category": "ELECTRONICS",
-    "currentPrice": 0,
-    "stockLevel": 0,
-    "reorderThreshold": 0,
-    "demandVelocity": 0,
-    "status": "ACTIVE"
-  }
-]
-```
-
-#### Example
-
-```bash
-curl -X GET "http://localhost:8080/api/products?category=ELECTRONICS&status=ACTIVE"
-```
-
-### Get Product
-
-Get details of a specific product by ID.
-
-```
-GET /products/{productId}
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "sku": "string",
-  "name": "string",
-  "category": "ELECTRONICS",
-  "currentPrice": 0,
-  "stockLevel": 0,
-  "reorderThreshold": 0,
-  "demandVelocity": 0,
-  "status": "ACTIVE"
-}
-```
-
-#### Example
-
-```bash
-curl -X GET "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6"
-```
-
-### Create Product
-
-Create a new product.
-
-```
-POST /products
-```
-
-#### Request Body
-
-```json
-{
-  "sku": "string",
-  "name": "string",
-  "category": "ELECTRONICS",
-  "initialPrice": 0,
-  "initialStock": 0,
-  "reorderThreshold": 0,
-  "demandVelocity": 0
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "sku": "string",
-  "name": "string",
-  "category": "ELECTRONICS",
-  "currentPrice": 0,
-  "stockLevel": 0,
-  "reorderThreshold": 0,
-  "demandVelocity": 0,
-  "status": "ACTIVE"
-}
-```
-
-#### Example
-
-```bash
-curl -X POST "http://localhost:8080/api/products" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sku": "PROD-001",
-    "name": "Sample Product",
-    "category": "ELECTRONICS",
-    "initialPrice": 29.99,
-    "initialStock": 100,
-    "reorderThreshold": 20,
-    "demandVelocity": 5
-  }'
-```
-
-### Update Stock Level
-
-Update the stock level of a product.
-
-```
-PATCH /products/{productId}/stock
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Request Body
-
-```json
-{
-  "stockLevel": 0
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "sku": "string",
-  "name": "string",
-  "category": "ELECTRONICS",
-  "currentPrice": 0,
-  "stockLevel": 0,
-  "reorderThreshold": 0,
-  "demandVelocity": 0,
-  "status": "ACTIVE"
-}
-```
-
-#### Example
-
-```bash
-curl -X PATCH "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/stock" \
-  -H "Content-Type: application/json" \
-  -d '{"stockLevel": 75}'
-```
-
-### Update Product Metrics
-
-Update the demand velocity and reorder threshold of a product.
-
-```
-PATCH /products/{productId}/metrics
-```
-
-### Request Pricing Suggestion
-
-Request a pricing suggestion for a product.
-
-```
-POST /products/{productId}/suggest-pricing
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Response
-
-```http
-HTTP/1.1 202 Accepted
-```
-
-#### Example
-
-```bash
-curl -X POST "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/suggest-pricing"
-```
-
-### Request Pricing Suggestion Stream
-
-Request a pricing suggestion with streaming response that includes reasoning.
-
-```
-POST /products/{productId}/suggest-pricing/stream
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-## Suggestions
-
-### List Suggestions
-
-Get a list of suggestions with optional filtering by status.
-
-```
-GET /suggestions
-```
-
-#### Query Parameters
-
-| Parameter | Type     | Required | Description                    |
-|-----------|----------|----------|--------------------------------|
-| status    | SuggestionStatus | No  | Filter by suggestion status (default: PENDING) |
-
-#### Response
-
-```json
-[
-  {
-    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    "productName": "string",
-    "type": "PRICING",
-    "status": "PENDING",
-    "triggerReason": "INVENTORY_LOW",
-    "confidence": 0,
-    "reasoning": "string",
-    "currentPrice": 0,
-    "recommendedPrice": 0,
-    "direction": "UP",
-    "currentStock": 0,
-    "recommendedQuantity": 0,
-
-### Decide on Pricing Suggestion
-
-Accept or reject a pricing suggestion.
-
-```
-PATCH /pricing-suggestions/{suggestionId}
-```
-
-#### Path Parameters
-
-| Parameter    | Type | Required | Description             |
-|--------------|------|----------|-------------------------|
-| suggestionId | UUID | Yes      | ID of the suggestion    |
-
-#### Request Body
-
-```json
-{
-  "decision": "ACCEPT"
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "productName": "string",
-  "type": "PRICING",
-  "status": "ACCEPTED",
-  "triggerReason": "INVENTORY_LOW",
-  "confidence": 0,
-  "reasoning": "string",
-  "currentPrice": 0,
-  "recommendedPrice": 0,
-  "direction": "UP",
-  "currentStock": 0,
-  "recommendedQuantity": 0,
-
-## Strategy Settings
-
-### Get Strategy
-
-Get the current strategy settings.
-
-```
-GET /settings/strategy
-```
-
-#### Response
-
-```json
-{
-  "mode": "AUTO",
-  "llmAvailable": true
-}
-```
-
-#### Example
-
-```bash
-curl -X GET "http://localhost:8080/api/settings/strategy"
-```
-
-### Update Strategy
-
-Update the strategy settings.
-
+Base URL: `http://localhost:8080/api`. The local development API has no authentication. JSON request and response bodies use `application/json` except the pricing stream, which uses `text/event-stream`.
 
 ## Enums
 
-### Category
+- `Category`: `ELECTRONICS`, `APPAREL`, `HOME`
+- `ProductStatus`: `ACTIVE`, `PRICE_REVIEW_PENDING`, `OUT_OF_STOCK`
+- `SuggestionStatus`: `PENDING`, `ACCEPTED`, `REJECTED`
+- `SuggestionType`: `PRICING`, `REORDER`
+- `TriggerReason`: `INITIAL`, `INVENTORY_LOW`, `DEMAND_SPIKE`, `MANUAL`
+- `PriceDirection`: `INCREASE`, `DECREASE`, `HOLD`
+- Advisor mode: `AUTO`, `AI`, `RULES`
 
-```java
-public enum Category {
-    ELECTRONICS,
-    APPAREL,
-    HOME
-}
-```
+## Products
 
-### ProductStatus
+| Method and path | Behavior |
+| --- | --- |
+| `GET /products?category=&status=` | List products; filters are optional. |
+| `GET /products/{productId}` | Get one product. |
+| `POST /products` | Create a product. Initial demand velocity is zero. |
+| `PATCH /products/{productId}/stock` | Set stock level; may queue low-stock advice asynchronously. |
+| `PATCH /products/{productId}/metrics` | Set demand velocity and reorder threshold; may queue advice if a trigger condition is met. |
+| `POST /products/{productId}/orders` | Simulate a sale, reducing stock and increasing demand velocity; may queue advice asynchronously. |
+| `POST /products/{productId}/suggest-pricing` | Queue a manual pricing suggestion; returns `202 Accepted`. |
+| `POST /products/{productId}/suggest-reorder` | Queue a manual reorder suggestion; returns `202 Accepted`. |
+| `POST /products/{productId}/suggest-pricing/stream` | Stream pricing reasoning and then the saved pricing suggestion using SSE. |
 
-```java
-public enum ProductStatus {
-    ACTIVE,
-    PRICE_REVIEW_PENDING,
-    OUT_OF_STOCK
-}
-```
+### Create product
 
-### SuggestionStatus
-
-```java
-public enum SuggestionStatus {
-    PENDING,
-    ACCEPTED,
-    REJECTED
-}
-```
-
-### SuggestionType
-
-```java
-public enum SuggestionType {
-    PRICING,
-    REORDER
-}
-```
-
-### TriggerReason
-
-```java
-public enum TriggerReason {
-    INVENTORY_LOW,
-    DEMAND_SPIKE
-}
-```
-
-### PriceDirection
-
-```java
-public enum PriceDirection {
-    UP,
-    DOWN,
-    MAINTAIN
-}
-```
-
-### StrategyMode
-
-```java
-public enum StrategyMode {
-    AUTO,
-    AI,
-    RULES
-}
-```
-```
-PATCH /settings/strategy
-```
-
-#### Request Body
+`POST /products`
 
 ```json
 {
-  "mode": "AI"
-}
-```
-
-#### Response
-
-```json
-{
-  "mode": "AI",
-  "llmAvailable": true
-}
-```
-
-#### Example
-
-```bash
-curl -X PATCH "http://localhost:8080/api/settings/strategy" \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "AI"}'
-```
-  "suggestedLeadTimeDays": 0,
-  "createdAt": "2023-01-01T00:00:00Z"
-}
-```
-
-#### Example
-
-```bash
-curl -X PATCH "http://localhost:8080/api/pricing-suggestions/3fa85f64-5717-4562-b3fc-2c963f66afa6" \
-  -H "Content-Type: application/json" \
-  -d '{"decision": "ACCEPT"}'
-```
-
-### Decide on Reorder Suggestion
-
-Accept or reject a reorder suggestion.
-
-```
-PATCH /reorder-suggestions/{suggestionId}
-```
-
-#### Path Parameters
-
-| Parameter    | Type | Required | Description             |
-|--------------|------|----------|-------------------------|
-| suggestionId | UUID | Yes      | ID of the suggestion    |
-
-#### Request Body
-
-```json
-{
-  "decision": "ACCEPT"
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "productName": "string",
-  "type": "REORDER",
-  "status": "ACCEPTED",
-  "triggerReason": "INVENTORY_LOW",
-  "confidence": 0,
-  "reasoning": "string",
-  "currentPrice": 0,
-  "recommendedPrice": 0,
-  "direction": "UP",
-  "currentStock": 0,
-  "recommendedQuantity": 0,
-  "suggestedLeadTimeDays": 0,
-  "createdAt": "2023-01-01T00:00:00Z"
-}
-```
-
-#### Example
-
-```bash
-curl -X PATCH "http://localhost:8080/api/reorder-suggestions/3fa85f64-5717-4562-b3fc-2c963f66afa6" \
-  -H "Content-Type: application/json" \
-  -d '{"decision": "ACCEPT"}'
-```
-    "suggestedLeadTimeDays": 0,
-    "createdAt": "2023-01-01T00:00:00Z"
-  }
-]
-```
-
-#### Example
-
-```bash
-curl -X GET "http://localhost:8080/api/suggestions?status=PENDING"
-```
-
-#### Response (Server-Sent Events)
-
-Streams events with reasoning and final suggestion.
-
-#### Example
-
-```bash
-curl -X POST "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/suggest-pricing/stream"
-```
-
-### Request Reorder Suggestion
-
-Request a reorder suggestion for a product.
-
-```
-POST /products/{productId}/suggest-reorder
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Response
-
-```http
-HTTP/1.1 202 Accepted
-```
-
-#### Example
-
-```bash
-curl -X POST "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/suggest-reorder"
-```
-
-#### Path Parameters
-
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Request Body
-
-```json
-{
-  "demandVelocity": 0,
-  "reorderThreshold": 0
-}
-```
-
-#### Response
-
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "sku": "string",
-  "name": "string",
+  "sku": "SKU-001",
+  "name": "Wireless Earbuds",
   "category": "ELECTRONICS",
-  "currentPrice": 0,
-  "stockLevel": 0,
-  "reorderThreshold": 0,
+  "currentPrice": 79.99,
+  "stockLevel": 45,
+  "reorderThreshold": 20
+}
+```
+
+`currentPrice` must be positive. Stock and threshold must be nonnegative integers.
+
+### Update stock
+
+`PATCH /products/{productId}/stock`
+
+```json
+{"stockLevel": 12}
+```
+
+### Update demand and reorder threshold
+
+`PATCH /products/{productId}/metrics`
+
+```json
+{"demandVelocity": 5, "reorderThreshold": 15}
+```
+
+Both values must be nonnegative integers.
+
+### Simulate a sale
+
+`POST /products/{productId}/orders`
+
+```json
+{"quantity": 1}
+```
+
+Quantity must be positive and cannot exceed available stock.
+
+### Product response
+
+Product endpoints return this shape:
+
+```json
+{
+  "id": "8ddde8e7-83d2-4b9a-8650-13e99928669b",
+  "sku": "SKU-001",
+  "name": "Wireless Earbuds",
+  "category": "ELECTRONICS",
+  "currentPrice": 79.99,
+  "stockLevel": 45,
+  "reorderThreshold": 20,
   "demandVelocity": 0,
   "status": "ACTIVE"
 }
 ```
 
-#### Example
+## Suggestions
 
-```bash
-curl -X PATCH "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/metrics" \
-  -H "Content-Type: application/json" \
-  -d '{"demandVelocity": 10, "reorderThreshold": 30}'
-```
+### List suggestions
 
-### Simulate Sale
+`GET /suggestions?status=PENDING` returns suggestions sorted newest first. `status` is optional and defaults to `PENDING`.
 
-Simulate a sale of a product (reduces stock level).
+A `SuggestionResponse` has `id`, `productId`, `productName`, `type`, `status`, `triggerReason`, `confidence`, `reasoning`, and `createdAt`. Pricing suggestions also include `currentPrice`, `recommendedPrice`, and `direction`. Reorder suggestions include `currentStock`, `recommendedQuantity`, and `suggestedLeadTimeDays`; fields not applicable to a suggestion type are `null`.
 
-```
-POST /products/{productId}/orders
-```
+### Accept or reject
 
-#### Path Parameters
+- `PATCH /pricing-suggestions/{suggestionId}`
+- `PATCH /reorder-suggestions/{suggestionId}`
 
-| Parameter  | Type | Required | Description         |
-|------------|------|----------|---------------------|
-| productId  | UUID | Yes      | ID of the product   |
-
-#### Request Body
+Body:
 
 ```json
-{
-  "quantity": 0
-}
+{"decision": "ACCEPTED"}
 ```
 
-#### Response
+`decision` must be `ACCEPTED` or `REJECTED`. A pricing acceptance updates the product price; a reorder acceptance adds the suggested quantity to stock. Rejection leaves product values unchanged. Decisions apply to `PENDING` suggestions only.
 
-```json
-{
-  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "sku": "string",
-  "name": "string",
-  "category": "ELECTRONICS",
-  "currentPrice": 0,
-  "stockLevel": 0,
-  "reorderThreshold": 0,
-  "demandVelocity": 0,
-  "status": "ACTIVE"
-}
+## Pricing SSE
+
+`POST /products/{productId}/suggest-pricing/stream` returns `text/event-stream`. The frontend should send `Accept: text/event-stream` and read the response incrementally.
+
+```text
+event: reasoning
+data: {"token":"Stock is below threshold..."}
+
+event: suggestion
+data: {"id":"...","type":"PRICING","status":"PENDING", ...}
 ```
 
-#### Example
+The server may send multiple `reasoning` events. It sends one `suggestion` event after the suggestion is persisted, or an `error` event with `{"message":"..."}` if generation cannot complete. The event only creates a proposal; a merchandiser must still accept it before the price changes. AI failures use rule-based pricing advice.
 
-```bash
-curl -X POST "http://localhost:8080/api/products/3fa85f64-5717-4562-b3fc-2c963f66afa6/orders" \
-  -H "Content-Type: application/json" \
-  -d '{"quantity": 5}'
-```
+## Advisor mode
+
+- `GET /settings/strategy`
+- `PATCH /settings/strategy` with `{"mode":"AI"}`
+
+Response: `{"mode":"AUTO","llmConfigured":false}`. `AUTO` uses AI when `LLM_API_KEY` is configured and otherwise uses rules. The setting is in memory and resets to `AUTO` when the application restarts.
+
+## Errors
+
+Requests may return `400` for invalid input, `404` for an unknown product or suggestion, and `409` for duplicate SKUs or a duplicate pending manual pricing suggestion. `500` indicates an unexpected server error.
